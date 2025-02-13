@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>minigame</title>
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      padding: 10px;
+      background-color: #ffe6f2;
+      font-family: Arial, sans-serif;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden; /* Prevent overflow from fireworks */
+    }
+    .input-box, .proposal-box {
+      border-radius: 20px;
+      padding: 20px;
+      text-align: center;
+      background-color: white;
+      max-width: 350px;
+      width: 100%;
+      box-shadow: 0 0 20px rgba(255, 105, 180, 0.8);
+      animation: pulseGlow 2s infinite alternate;
+      margin-bottom: 20px;
+      transition: filter 0.3s ease; /* Transition for blur effect */
+    }
+    .error-box {
+      color: red;
+      font-size: 14px;
+      margin-top: 10px;
+      visibility: hidden;
+    }
+    input {
+      padding: 10px;
+      width: calc(100% - 24px);
+      font-size: 16px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+    }
+    button {
+      padding: 12px 24px;
+      margin: 10px;
+      border-radius: 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .yes-btn { background-color: #4caf50; color: white; }
+    .no-btn { background-color: #f44336; color: white; position: absolute; }
+    
+    /* Pop-up animation styles */
+    .popup {
+      font-size: 24px; /* Increased font size */
+      margin-top: 20px;
+      color: #e60073; /* Optional: Change color for better visibility */
+      opacity: 0;
+      transform: scale(0);
+      animation: popUp 0.5s forwards, tilt 3s infinite; /* Animation for pop-up and continuous tilt */
+    }
+
+    @keyframes popUp {
+      0% {
+        opacity: 0;
+        transform: scale(0);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.1);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes tilt {
+      0%, 100% {
+        transform: rotate(-5deg);
+      }
+      50% {
+        transform: rotate(5deg);
+      }
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 20px rgba(255, 105, 180, 0.8); }
+      50% { box-shadow: 0 0 40px rgba(255, 20, 147, 0.9); }
+    }
+
+    /* Loading spinner styles */
+    .loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: none; /* Hidden by default */
+      border: 8px solid rgba(255, 105, 180, 0.3);
+      border-top: 8px solid #e60073;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Firework styles */
+    .firework {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background-color: #ff0;
+      border-radius: 50%;
+      animation: shoot 1s forwards, explode 1s forwards 1s; /* Shooting and exploding */
+    }
+
+    @keyframes shoot {
+      0% {
+        transform: translateY(0);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-200px);
+        opacity: 1;
+      }
+    }
+
+    @keyframes explode {
+      0% {
+        transform: scale(1);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(5);
+        opacity: 0;
+      }
+    }
+
+    .explosion {
+      position: absolute;
+      width: 100px;
+      height: 100px;
+      background-color: rgba(255, 0, 0, 0.7);
+      border-radius: 50%;
+      animation: kaboom 1s forwards;
+      opacity: 1;
+    }
+
+    @keyframes kaboom {
+      0% {
+        transform: scale(1);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(1.5);
+        opacity: 0;
+      }
+    }
+
+    .message {
+      font-size: 36px;
+      color: #e60073;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeInUp 0.5s forwards;
+    }
+
+    @keyframes fadeInUp {
+      0% {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .input-box, .proposal-box { width: 90%; }
+      input { font-size: 14px; }
+    }
+    p{
+      color: rgba(255, 105, 180, 0.366);
+    }
+  </style>
+</head>
+<body>
+  <p>M.Salahe</p>
+  <div class="input-box">
+    <h1>Enter your name to play:</h1>
+    <input type="text" id="username" placeholder="Your name">
+    <div class="error-box" id="error"></div>
+    <button onclick="startGame()">Start 💖</button>
+  </div>
+
+  <div class="loading" id="loading"></div>
+
+  <script>
+    let hasAccepted = false; // Track if the user has accepted the proposal
+
+    function startGame() {
+      const name = document.getElementById('username').value.trim();
+      const errorBox = document.getElementById('error');
+      const loading = document.getElementById('loading');
+      const inputBox = document.querySelector('.input-box');
+
+      if (!name) {
+        errorBox.textContent = 'Please enter a name to start.';
+        errorBox.style.visibility = 'visible';
+        return;
+      }
+      if (name.length < 3) {
+        errorBox.textContent = 'Name cannot be less than 3 characters.';
+        errorBox.style.visibility = 'visible';
+        return;
+      }
+      errorBox.style.visibility = 'hidden';
+
+      loading.style.display = 'block';
+      inputBox.style.filter = 'blur(5px)';
+
+      const messageBox = document.createElement('div');
+      messageBox.textContent = "I don't mind you saying no!";
+      messageBox.className = 'popup';
+      document.body.appendChild(messageBox);
+
+      setTimeout(() => {
+        document.body.removeChild(messageBox);
+        loading.style.display = 'none';
+        inputBox.style.filter = 'none';
+        document.body.innerHTML = `
+          <div class="proposal-box">
+            <h1>Will you be my Valentine? 💖</h1>
+            <button class="yes-btn" onclick="sayYes('${name}')">Yes 💕</button>
+            <button class="no-btn" onmouseenter="moveNoButton()">No 💔</button>
+          </div>`;
+      }, 3000);
+    }
+
+    function moveNoButton() {
+      const btn = document.querySelector('.no-btn');
+      const x = Math.random() * (window.innerWidth - 150);
+      const y = Math.random() * (window.innerHeight - 150);
+      btn.style.left = `${x}px`;
+      btn.style.top = `${y}px`;
+    }
+
+    function sayYes(name) {
+      if (hasAccepted) return; // Prevent multiple clicks
+      hasAccepted = true; // Mark as accepted
+      const proposalBox = document.querySelector('.proposal-box');
+      proposalBox.style.display = 'none'; // Hide the proposal box
+      createFireworks();
+      setTimeout(() => {
+        const message = document.createElement('div');
+        message.className = 'message';
+        message.innerHTML = `Yay! ${name} has said Yes! ❤️`;
+        document.body.appendChild(message);
+      }, 1000); // Delay message display for fireworks
+    }
+
+    function createFireworks() {
+      for (let i = 0; i < 5; i++) { // Fewer fireworks for better visibility
+        const firework = document.createElement('div');
+        firework.className = 'firework';
+        firework.style.left = `${Math.random() * window.innerWidth}px`;
+        firework.style.top = `${Math.random() * window.innerHeight}px`;
+        document.body.appendChild(firework);
+
+        firework.addEventListener('animationend', () => {
+          const explosion = document.createElement('div');
+          explosion.className = 'explosion';
+          explosion.style.left = firework.style.left;
+          explosion.style.top = firework.style.top;
+          document.body.appendChild(explosion);
+
+          // Remove explosion after 30 seconds
+          setTimeout(() => {
+            document.body.removeChild(explosion);
+          }, 30000); // 30 seconds
+          
+          document.body.removeChild(firework);
+        });
+      }
+      const audio = new Audio('fire.mp3'); // Add your firework sound file
+      audio.play();
+    }
+  </script>
+</body>
+</html>
